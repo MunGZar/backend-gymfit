@@ -29,7 +29,7 @@ export class UsuariosService {
     this.saltRounds = parseInt(raw, 10) || 10;
   }
 
-  // ─── Crear nuevo usuario ──────────────────────────────────────
+  //  Crear nuevo usuario 
   async create(dto: CreateUsuarioDto): Promise<Omit<Usuario, 'password'>> {
     const correoExiste = await this.usuarioRepo.findOne({
       where: { correo: dto.correo },

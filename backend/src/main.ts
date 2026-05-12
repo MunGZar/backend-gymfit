@@ -8,11 +8,17 @@ async function bootstrap() {
   // Prefijo global → /api/...
   app.setGlobalPrefix('api');
 
-  // CORS — lee CORS_ORIGIN del .env (Next.js corre en 3000)
-  const corsOrigin = process.env.CORS_ORIGIN || 'http://localhost:3000';
+  // CORS
+  // Frontend Next.js dev corre en :3000
+  // Backend NestJS corre en :3001 (PORT del .env)
+  const corsOrigin = process.env.CORS_ORIGIN
+    ? process.env.CORS_ORIGIN.split(',').map((o) => o.trim())
+    : ['http://localhost:3000', 'http://localhost:3001'];
+
   app.enableCors({
     origin: corsOrigin,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
     credentials: true,
   });
 

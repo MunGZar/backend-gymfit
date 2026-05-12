@@ -16,7 +16,7 @@ export class NotificacionesService {
     @InjectRepository(Equipo)
     private readonly equipoRepo: Repository<Equipo>,
   ) {}
- 
+
   // CRUD básico
 
   async create(dto: CreateNotificacionDto): Promise<Notificacion> {
@@ -60,7 +60,6 @@ export class NotificacionesService {
   }
 
   // Marcar como leída(s)
-
 
   async marcarLeidas(id_usuario: number, dto: MarcarLeidaDto): Promise<{ actualizadas: number }> {
     const query = this.notificacionRepo.createQueryBuilder()

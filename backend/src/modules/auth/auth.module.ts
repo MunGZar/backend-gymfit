@@ -17,27 +17,15 @@ import { Rol } from '../roles/entities/rol.entity';
       inject: [ConfigService],
       useFactory: (config: ConfigService) => {
         const secret = config.get<string>('JWT_SECRET');
-        if (!secret) {
-          throw new Error(
-            'JWT_SECRET no está configurado. Agréguela en el archivo .env',
-          );
-        }
+        if (!secret) throw new Error('JWT_SECRET no está configurado en el .env');
 
-        const expiresIn = config.get<string>('JWT_EXPIRES_IN', '8h');
-        if (!expiresIn) {
-          throw new Error('JWT_EXPIRES_IN no está configurado');
-        }
-
-        const parsedExpiresIn = parseInt(expiresIn, 10);
-        const expiresInValue = Number.isNaN(parsedExpiresIn)
-          ? expiresIn
-          : parsedExpiresIn;
+        // CORRECCIÓN: sin parseInt — '8h' como string directo.
+        // parseInt('8h') devolvía 8 (segundos), no 8 horas.
+        const expiresIn = (config.get<string>('JWT_EXPIRES_IN') ?? '8h') as `${number}${'s'|'m'|'h'|'d'}`;
 
         return {
           secret,
-          signOptions: {
-            expiresIn: expiresInValue as any,
-          },
+          signOptions: { expiresIn },
         };
       },
     }),

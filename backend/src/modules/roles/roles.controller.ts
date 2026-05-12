@@ -22,8 +22,6 @@ export class RolesController {
   /**
    * POST /api/roles/seed  — @Public
    * Inserta los 4 roles del sistema solo si la tabla está vacía.
-   * Necesario para la inicialización en BD nueva.
-   * Una vez creados los roles, este endpoint devuelve los existentes sin modificarlos.
    */
   @Public()
   @Post('seed')
@@ -32,24 +30,33 @@ export class RolesController {
     return this.rolesService.seed();
   }
 
-  //  CRUD protegido — solo admin 
+  /**
+   * GET /api/roles  — @Public
+   * Lista los roles disponibles. Pública porque el formulario de registro
+   * (HU-01) necesita cargarlos sin token para mostrar el selector de rol.
+   */
+  @Public()
+  @Get()
+  findAll() {
+    return this.rolesService.findAll();
+  }
+
+  /**
+   * GET /api/roles/:id  — @Public
+   * Consulta un rol por id (usada en selectores de formularios).
+   */
+  @Public()
+  @Get(':id')
+  findOne(@Param('id', ParseIntPipe) id: number) {
+    return this.rolesService.findOne(id);
+  }
+
+  // Mutaciones protegidas — solo admin
 
   @Post()
   @Roles('admin')
   create(@Body() dto: CreateRolDto) {
     return this.rolesService.create(dto);
-  }
-
-  @Get()
-  @Roles('admin')
-  findAll() {
-    return this.rolesService.findAll();
-  }
-
-  @Get(':id')
-  @Roles('admin')
-  findOne(@Param('id', ParseIntPipe) id: number) {
-    return this.rolesService.findOne(id);
   }
 
   @Put(':id')
