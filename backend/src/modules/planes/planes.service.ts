@@ -14,7 +14,13 @@ export class PlanesService {
   async create(dto: CreatePlanDto): Promise<Plan> {
     const existe = await this.planRepo.findOne({ where: { nombre: dto.nombre } });
     if (existe) throw new ConflictException(`El plan "${dto.nombre}" ya existe`);
-    const plan = this.planRepo.create(dto);
+
+    const plan = this.planRepo.create({
+      nombre: dto.nombre,
+      precio: dto.precio,
+      duracion_dias: dto.duracion_dias,
+      beneficios: dto.beneficios ?? null,
+    });
     return this.planRepo.save(plan);
   }
 
@@ -30,6 +36,11 @@ export class PlanesService {
 
   async update(id: number, dto: UpdatePlanDto): Promise<Plan> {
     const plan = await this.findOne(id);
+    // Verificar nombre duplicado solo si se está cambiando
+    if (dto.nombre && dto.nombre !== plan.nombre) {
+      const existe = await this.planRepo.findOne({ where: { nombre: dto.nombre } });
+      if (existe) throw new ConflictException(`El plan "${dto.nombre}" ya existe`);
+    }
     Object.assign(plan, dto);
     return this.planRepo.save(plan);
   }

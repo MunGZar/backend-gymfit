@@ -104,9 +104,12 @@ export class SociosService {
     return this.socioRepo.save(socio);
   }
 
+  // Soft-delete: marca el socio como inactivo en lugar de eliminarlo.
+  // Preserva todas las relaciones (asistencias, evaluaciones, progreso, etc.)
   async remove(id: number): Promise<void> {
     const socio = await this.socioRepo.findOne({ where: { id_socio: id } });
     if (!socio) throw new NotFoundException(`Socio con id ${id} no encontrado`);
-    await this.socioRepo.remove(socio);
+    socio.activo = false;
+    await this.socioRepo.save(socio);
   }
 }

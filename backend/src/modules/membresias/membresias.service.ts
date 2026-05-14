@@ -1,10 +1,14 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import {
+  Injectable, NotFoundException, BadRequestException, ConflictException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Membresia } from './entities/membresia.entity';
 import { Socio } from '../socios/entities/socio.entity';
 import { Plan } from '../planes/entities/plan.entity';
-import { CreateMembresiaDto, UpdateMembresiaDto } from './dto/membresia.dto';
+import { CreateMembresiaDto, UpdateMembresiaDto, CambiarEstadoMembresiaDto } from './dto/membresia.dto';
+
+const ESTADOS_VALIDOS = ['activa', 'vencida', 'cancelada'];
 
 @Injectable()
 export class MembresiasService {
@@ -17,17 +21,52 @@ export class MembresiasService {
     private readonly planRepo: Repository<Plan>,
   ) {}
 
+  // ─── RF-006: Asignar membresía ────────────────────────────────
+  // La fecha_fin se calcula automáticamente desde la duración del plan.
+  // No se permite asignar una membresía si el socio ya tiene una activa.
   async create(dto: CreateMembresiaDto): Promise<Membresia> {
-    const socio = await this.socioRepo.findOne({ where: { id_socio: dto.id_socio } });
+    const socio = await this.socioRepo.findOne({
+      where: { id_socio: dto.id_socio },
+      relations: ['usuario'],
+    });
     if (!socio) throw new NotFoundException(`Socio con id ${dto.id_socio} no encontrado`);
 
     const plan = await this.planRepo.findOne({ where: { id_plan: dto.id_plan } });
     if (!plan) throw new NotFoundException(`Plan con id ${dto.id_plan} no encontrado`);
 
-    if (new Date(dto.fecha_fin) <= new Date(dto.fecha_inicio))
-      throw new BadRequestException('La fecha de fin debe ser posterior a la fecha de inicio');
+    // Verificar que no haya membresía activa vigente para este socio
+    const hoy = new Date();
+    hoy.setHours(0, 0, 0, 0);
+    const membresiaActiva = await this.membresiaRepo
+      .createQueryBuilder('m')
+      .where('m.socio_id = :id', { id: dto.id_socio })
+      .andWhere('m.estado = :estado', { estado: 'activa' })
+      .andWhere('m.fecha_fin >= :hoy', { hoy: hoy.toISOString().split('T')[0] })
+      .getOne();
 
-    const membresia = this.membresiaRepo.create({ socio, plan, ...dto, estado: 'activa' });
+    if (membresiaActiva) {
+      throw new ConflictException(
+        `El socio ya tiene una membresía activa vigente hasta ${membresiaActiva.fecha_fin}. ` +
+        `Cancélela o espere a que venza antes de asignar una nueva.`,
+      );
+    }
+
+    // Calcular fecha_fin automáticamente: fecha_inicio + duracion_dias del plan
+    const inicio = new Date(dto.fecha_inicio);
+    if (isNaN(inicio.getTime())) {
+      throw new BadRequestException('La fecha de inicio no es válida');
+    }
+    const fin = new Date(inicio);
+    fin.setDate(fin.getDate() + plan.duracion_dias);
+    const fecha_fin = fin.toISOString().split('T')[0];
+
+    const membresia = this.membresiaRepo.create({
+      socio,
+      plan,
+      fecha_inicio: dto.fecha_inicio,
+      fecha_fin,
+      estado: 'activa',
+    });
     return this.membresiaRepo.save(membresia);
   }
 
@@ -55,8 +94,48 @@ export class MembresiasService {
     });
   }
 
+  // ─── RF-007: Cambiar estado de membresía ──────────────────────
+  // Endpoint dedicado: PATCH /membresias/:id/estado
+  // Estados válidos: activa | vencida | cancelada
+  async cambiarEstado(id: number, dto: CambiarEstadoMembresiaDto): Promise<Membresia> {
+    const estado = dto.estado.toLowerCase().trim();
+    if (!ESTADOS_VALIDOS.includes(estado)) {
+      throw new BadRequestException(
+        `Estado inválido: "${dto.estado}". Los estados permitidos son: ${ESTADOS_VALIDOS.join(', ')}.`,
+      );
+    }
+
+    const m = await this.findOne(id);
+    if (m.estado === estado) {
+      throw new BadRequestException(`La membresía ya tiene el estado "${estado}".`);
+    }
+
+    m.estado = estado;
+    return this.membresiaRepo.save(m);
+  }
+
+  // Actualización general (campos opcionales)
   async update(id: number, dto: UpdateMembresiaDto): Promise<Membresia> {
     const m = await this.findOne(id);
+
+    if (dto.estado) {
+      const estado = dto.estado.toLowerCase().trim();
+      if (!ESTADOS_VALIDOS.includes(estado)) {
+        throw new BadRequestException(
+          `Estado inválido: "${dto.estado}". Los estados permitidos son: ${ESTADOS_VALIDOS.join(', ')}.`,
+        );
+      }
+      dto.estado = estado;
+    }
+
+    if (dto.fecha_inicio && dto.id_plan) {
+      const plan = await this.planRepo.findOne({ where: { id_plan: dto.id_plan } });
+      if (!plan) throw new NotFoundException(`Plan con id ${dto.id_plan} no encontrado`);
+      const fin = new Date(dto.fecha_inicio);
+      fin.setDate(fin.getDate() + plan.duracion_dias);
+      (dto as any).fecha_fin = fin.toISOString().split('T')[0];
+    }
+
     Object.assign(m, dto);
     return this.membresiaRepo.save(m);
   }

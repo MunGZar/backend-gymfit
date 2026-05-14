@@ -4,6 +4,7 @@ import {
   ConflictException,
   NotFoundException,
   BadRequestException,
+  ForbiddenException,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
@@ -44,6 +45,17 @@ export class AuthService {
 
     const rol = await this.rolRepo.findOne({ where: { id_rol: dto.id_rol } });
     if (!rol) throw new NotFoundException(`Rol con id ${dto.id_rol} no encontrado`);
+
+    // Seguridad: el registro público solo permite el rol 'socio'.
+    // Para crear usuarios con otros roles (admin, entrenador, recepcionista)
+    // se debe usar el endpoint protegido POST /api/usuarios (solo admin).
+    const ROLES_PERMITIDOS_EN_REGISTRO = ['socio'];
+    if (!ROLES_PERMITIDOS_EN_REGISTRO.includes(rol.nombre.toLowerCase())) {
+      throw new ForbiddenException(
+        `El registro público solo permite el rol "socio". ` +
+        `Para crear usuarios con rol "${rol.nombre}" contacte al administrador.`,
+      );
+    }
 
     const hash = await bcrypt.hash(dto.password, this.saltRounds);
     const usuario = this.usuariosRepo.create({

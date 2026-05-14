@@ -15,14 +15,17 @@ import { Public } from '../../common/decorators/public.decorator';
 export class RolesController {
   constructor(private readonly rolesService: RolesService) {}
 
-  @Public()
   @Post('seed')
+  @Roles('admin')
+  @ApiBearerAuth('JWT-auth')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
     summary: 'Inicializar roles del sistema',
-    description: 'Inserta los 4 roles base (admin, entrenador, recepcionista, socio) solo si la tabla está vacía. Endpoint público — útil en primer despliegue.',
+    description: 'Inserta los 4 roles base (admin, entrenador, recepcionista, socio) solo si la tabla está vacía. Solo accesible por administradores.',
   })
   @ApiResponse({ status: 200, description: 'Roles inicializados o ya existentes' })
+  @ApiResponse({ status: 401, description: 'No autorizado' })
+  @ApiResponse({ status: 403, description: 'Rol insuficiente — solo admin' })
   seed() {
     return this.rolesService.seed();
   }

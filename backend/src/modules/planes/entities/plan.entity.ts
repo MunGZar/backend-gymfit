@@ -39,7 +39,11 @@ export class Plan {
   @Min(1, { message: 'La duración debe ser al menos 1 día' })
   duracion_dias!: number;
 
- 
+  @Column({ name: 'beneficios', type: 'text', nullable: true })
+  @IsOptional()
+  @IsString()
+  beneficios!: string | null;
+
   @OneToMany(() => Membresia, (m) => m.plan)
   membresias!: Membresia[];
 }

@@ -140,7 +140,41 @@ export class AsistenciasService {
       (finValida.getTime() - hoy.getTime()) / (1000 * 60 * 60 * 24),
     );
 
-    // 9. Registrar la asistencia automáticamente (RF-017 integrado)
+    // 9. Verificar si ya registró asistencia hoy para evitar duplicados
+    const hoyInicio = new Date(hoy);
+    hoyInicio.setHours(0, 0, 0, 0);
+    const hoySiguiente = new Date(hoy);
+    hoySiguiente.setHours(23, 59, 59, 999);
+
+    const yaRegistrado = await this.asistenciaRepo
+      .createQueryBuilder('a')
+      .where('a.socio_id = :id', { id: socio.id_socio })
+      .andWhere('a.fecha >= :inicio', { inicio: hoyInicio })
+      .andWhere('a.fecha <= :fin', { fin: hoySiguiente })
+      .getOne();
+
+    if (yaRegistrado) {
+      return {
+        acceso: true,
+        color: 'verde',
+        motivo: `Acceso permitido. Bienvenido de nuevo, ${usuario.nombre}. Asistencia ya registrada hoy.`,
+        socio: {
+          id_socio: socio.id_socio,
+          nombre: usuario.nombre,
+          identificacion: usuario.identificacion,
+        },
+        membresia: {
+          id_membresia: membresiaValida.id_membresia,
+          plan: membresiaValida.plan.nombre,
+          fecha_fin: membresiaValida.fecha_fin,
+          estado: membresiaValida.estado,
+          dias_restantes: diasRestantes,
+        },
+        asistencia_registrada: false,
+      };
+    }
+
+    // 10. Registrar la asistencia automáticamente (RF-017 integrado)
     const asistencia = this.asistenciaRepo.create({ socio });
     await this.asistenciaRepo.save(asistencia);
 
