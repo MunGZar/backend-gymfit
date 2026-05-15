@@ -6,9 +6,10 @@ import {
   JoinColumn,
 } from 'typeorm';
 import {
-  IsNotEmpty,
   IsInt,
   IsOptional,
+  IsString,
+  MaxLength,
   Min,
 } from 'class-validator';
 import { Rutina } from './rutina.entity';
@@ -16,9 +17,8 @@ import { Ejercicio } from '../../ejercicios/entities/ejercicio.entity';
 
 /**
  * Tabla intermedia: rutina_ejercicio
- * Reemplaza el @ManyToMany simple del código original.
- * Agrega atributos propios: series, repeticiones, descanso.
- * Relación: rutina (N) y ejercicio (N) con atributos adicionales.
+ * Registra los ejercicios de una rutina con sus atributos de carga.
+ * RF-011: series, repeticiones, descanso, observaciones técnicas.
  */
 @Entity('rutina_ejercicio')
 export class RutinaEjercicio {
@@ -43,7 +43,14 @@ export class RutinaEjercicio {
   @Min(0)
   descanso!: number | null;
 
-  
+  @Column({ name: 'observaciones', type: 'varchar', length: 500, nullable: true, comment: 'Observaciones técnicas / indicaciones del entrenador' })
+  @IsOptional()
+  @IsString()
+  @MaxLength(500)
+  observaciones!: string | null;
+
+  // ─── Relaciones ───────────────────────────────────────────────────────────
+
   @ManyToOne(() => Rutina, (r) => r.rutina_ejercicios, { nullable: false, onDelete: 'CASCADE' })
   @JoinColumn({ name: 'id_rutina' })
   rutina!: Rutina;

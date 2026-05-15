@@ -1,9 +1,7 @@
 import {
   IsNotEmpty, IsOptional, IsString, IsInt,
-  IsPositive, IsDateString, MaxLength, Min,
-  ValidateNested, IsArray,
+  IsPositive, MaxLength, Min,
 } from 'class-validator';
-import { Type } from 'class-transformer';
 
 
 export class RutinaEjercicioItemDto {
@@ -12,18 +10,23 @@ export class RutinaEjercicioItemDto {
   @IsPositive()
   id_ejercicio!: number;
 
-  @IsOptional({ message: 'Las series son opcionales' })
+  @IsOptional()
   @IsInt()
   @Min(1)
   series?: number;
 
-  @IsOptional({ message: 'Las repeticiones son opcionales' })
+  @IsOptional()
   @IsInt()
   @Min(1)
   repeticiones?: number;
 
-  @IsOptional({ message: 'El descanso es opcional' })
+  @IsOptional()
   @IsInt()
   @Min(0)
   descanso?: number;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(500)
+  observaciones?: string;
 }

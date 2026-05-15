@@ -25,28 +25,33 @@ export class RutinasService {
     private readonly dataSource: DataSource,
   ) {}
 
-  //  RUTINAS 
+  // ─── RUTINAS ─────────────────────────────────────────────────────────────
 
   async create(dto: CreateRutinaDto): Promise<Rutina> {
     return this.dataSource.transaction(async (manager) => {
       const rutina = manager.create(Rutina, {
-        nombre: dto.nombre,
+        nombre:      dto.nombre,
         descripcion: dto.descripcion ?? null,
-        nivel: dto.nivel ?? null,
-        objetivo: dto.objetivo ?? null,
+        nivel:       dto.nivel ?? null,
+        objetivo:    dto.objetivo ?? null,
       });
       const rutinaSaved = await manager.save(rutina);
 
       if (dto.ejercicios?.length) {
         for (const item of dto.ejercicios) {
-          const ejercicio = await this.ejercicioRepo.findOne({ where: { id_ejercicio: item.id_ejercicio } });
-          if (!ejercicio) throw new NotFoundException(`Ejercicio con id ${item.id_ejercicio} no encontrado`);
+          const ejercicio = await this.ejercicioRepo.findOne({
+            where: { id_ejercicio: item.id_ejercicio },
+          });
+          if (!ejercicio) {
+            throw new NotFoundException(`Ejercicio con id ${item.id_ejercicio} no encontrado`);
+          }
           const re = manager.create(RutinaEjercicio, {
-            rutina: rutinaSaved,
+            rutina:        rutinaSaved,
             ejercicio,
-            series: item.series ?? null,
-            repeticiones: item.repeticiones ?? null,
-            descanso: item.descanso ?? null,
+            series:        item.series        ?? null,
+            repeticiones:  item.repeticiones  ?? null,
+            descanso:      item.descanso      ?? null,
+            observaciones: item.observaciones ?? null,
           });
           await manager.save(re);
         }
@@ -77,10 +82,10 @@ export class RutinasService {
   async update(id: number, dto: UpdateRutinaDto): Promise<Rutina> {
     const r = await this.rutinaRepo.findOne({ where: { id_rutina: id } });
     if (!r) throw new NotFoundException(`Rutina con id ${id} no encontrada`);
-    if (dto.nombre !== undefined) r.nombre = dto.nombre;
+    if (dto.nombre      !== undefined) r.nombre      = dto.nombre;
     if (dto.descripcion !== undefined) r.descripcion = dto.descripcion ?? null;
-    if (dto.nivel !== undefined) r.nivel = dto.nivel ?? null;
-    if (dto.objetivo !== undefined) r.objetivo = dto.objetivo ?? null;
+    if (dto.nivel       !== undefined) r.nivel       = dto.nivel ?? null;
+    if (dto.objetivo    !== undefined) r.objetivo    = dto.objetivo ?? null;
     return this.rutinaRepo.save(r);
   }
 
@@ -90,7 +95,7 @@ export class RutinasService {
     await this.rutinaRepo.remove(r);
   }
 
-  //  ASIGNACIONES RUTINA → SOCIO 
+  // ─── ASIGNACIONES RUTINA → SOCIO ─────────────────────────────────────────
 
   async asignarRutina(dto: CreateAsignacionRutinaDto): Promise<AsignacionRutina> {
     const rutina = await this.rutinaRepo.findOne({ where: { id_rutina: dto.id_rutina } });
@@ -100,7 +105,9 @@ export class RutinasService {
     if (!socio) throw new NotFoundException(`Socio con id ${dto.id_socio} no encontrado`);
 
     const asignacion = this.asignacionRutinaRepo.create({
-      rutina, socio, fecha_asignacion: dto.fecha_asignacion,
+      rutina,
+      socio,
+      fecha_asignacion: dto.fecha_asignacion,
     });
     return this.asignacionRutinaRepo.save(asignacion);
   }
