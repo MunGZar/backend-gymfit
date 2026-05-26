@@ -68,7 +68,7 @@ export class AuthService {
     if (!usuario) throw new UnauthorizedException('Credenciales incorrectas');
     if (!usuario.estado) throw new UnauthorizedException('El usuario está inactivo');
 
-    if (usuario.bloqueado_hasta && usuario.bloqueado_hasta > new Date()) {
+    if (usuario.bloqueado_hasta && new Date(usuario.bloqueado_hasta) > new Date()) {
       throw new UnauthorizedException('Cuenta bloqueada temporalmente por múltiples intentos fallidos. Intente más tarde.');
     }
 

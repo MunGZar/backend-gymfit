@@ -29,7 +29,7 @@ export class CreateProspectoDto {
 }
 
 export class UpdateProspectoDto extends PartialType(CreateProspectoDto) {
-  @IsOptional()
+  @IsOptional({ message: 'El estado es opcional' })
   @IsString()
   estado?: string;
 }
@@ -46,4 +46,12 @@ export class ConvertirProspectoDto {
   @IsNotEmpty({ message: 'La contraseña es obligatoria' })
   @IsString()
   password!: string;
+
+  @IsOptional({ message: 'La dirección es opcional' })
+  @IsString()
+  direccion?: string;
+
+  @IsOptional({ message: 'Los datos de salud son opcionales' })
+  @IsString()
+  datos_salud?: string;
 }

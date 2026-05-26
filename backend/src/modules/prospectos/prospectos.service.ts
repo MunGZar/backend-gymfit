@@ -90,6 +90,8 @@ export class ProspectosService {
     const socio = this.socioRepo.create({
       usuario: savedUsuario,
       prospecto: prospecto,
+      direccion: dto.direccion || null,
+      datos_salud: dto.datos_salud || null,
     });
     const savedSocio = await this.socioRepo.save(socio);
 
