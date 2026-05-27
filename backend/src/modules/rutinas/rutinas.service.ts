@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, DataSource } from 'typeorm';
 import { Rutina } from './entities/rutina.entity';
@@ -8,6 +8,7 @@ import { Ejercicio } from '../ejercicios/entities/ejercicio.entity';
 import { Socio } from '../socios/entities/socio.entity';
 import { CreateRutinaDto, UpdateRutinaDto } from './dto/rutina.dto';
 import { CreateAsignacionRutinaDto } from './dto/asignacion-rutina.dto';
+import { RutinaEjercicioItemDto } from './dto/rutina-ejercicio.dto';
 
 @Injectable()
 export class RutinasService {
@@ -25,7 +26,7 @@ export class RutinasService {
     private readonly dataSource: DataSource,
   ) {}
 
-  // ─── RUTINAS ─────────────────────────────────────────────────────────────
+  // ── RUTINAS ──────────────────────────────────────────────────────────────
 
   async create(dto: CreateRutinaDto): Promise<Rutina> {
     return this.dataSource.transaction(async (manager) => {
@@ -95,7 +96,90 @@ export class RutinasService {
     await this.rutinaRepo.remove(r);
   }
 
-  // ─── ASIGNACIONES RUTINA → SOCIO ─────────────────────────────────────────
+  // ── GESTIÓN DE EJERCICIOS EN UNA RUTINA EXISTENTE ────────────────────────
+
+  /**
+   * Agrega un ejercicio del catálogo a una rutina existente.
+   * Lanza ConflictException si el ejercicio ya está en la rutina.
+   */
+  async agregarEjercicioARutina(
+    idRutina: number,
+    dto: RutinaEjercicioItemDto,
+  ): Promise<RutinaEjercicio> {
+    const rutina = await this.rutinaRepo.findOne({ where: { id_rutina: idRutina } });
+    if (!rutina) throw new NotFoundException(`Rutina con id ${idRutina} no encontrada`);
+
+    const ejercicio = await this.ejercicioRepo.findOne({
+      where: { id_ejercicio: dto.id_ejercicio },
+    });
+    if (!ejercicio) {
+      throw new NotFoundException(`Ejercicio con id ${dto.id_ejercicio} no encontrado`);
+    }
+
+    // Verificar duplicado
+    const existe = await this.rutinaEjercicioRepo.findOne({
+      where: { rutina: { id_rutina: idRutina }, ejercicio: { id_ejercicio: dto.id_ejercicio } },
+    });
+    if (existe) {
+      throw new ConflictException(
+        `El ejercicio "${ejercicio.nombre}" ya está en esta rutina`,
+      );
+    }
+
+    const re = this.rutinaEjercicioRepo.create({
+      rutina,
+      ejercicio,
+      series:        dto.series        ?? null,
+      repeticiones:  dto.repeticiones  ?? null,
+      descanso:      dto.descanso      ?? null,
+      observaciones: dto.observaciones ?? null,
+    });
+    return this.rutinaEjercicioRepo.save(re);
+  }
+
+  /**
+   * Actualiza series/reps/descanso/observaciones de un ejercicio dentro de una rutina.
+   */
+  async actualizarEjercicioDeRutina(
+    idRutina: number,
+    idRutinaEjercicio: number,
+    dto: Partial<RutinaEjercicioItemDto>,
+  ): Promise<RutinaEjercicio> {
+    const re = await this.rutinaEjercicioRepo.findOne({
+      where: { id: idRutinaEjercicio, rutina: { id_rutina: idRutina } },
+      relations: ['ejercicio'],
+    });
+    if (!re) {
+      throw new NotFoundException(
+        `Ejercicio ${idRutinaEjercicio} no encontrado en la rutina ${idRutina}`,
+      );
+    }
+    if (dto.series        !== undefined) re.series        = dto.series        ?? null;
+    if (dto.repeticiones  !== undefined) re.repeticiones  = dto.repeticiones  ?? null;
+    if (dto.descanso      !== undefined) re.descanso      = dto.descanso      ?? null;
+    if (dto.observaciones !== undefined) re.observaciones = dto.observaciones ?? null;
+    return this.rutinaEjercicioRepo.save(re);
+  }
+
+  /**
+   * Elimina un ejercicio de una rutina (por id del registro rutina_ejercicio).
+   */
+  async quitarEjercicioDeRutina(
+    idRutina: number,
+    idRutinaEjercicio: number,
+  ): Promise<void> {
+    const re = await this.rutinaEjercicioRepo.findOne({
+      where: { id: idRutinaEjercicio, rutina: { id_rutina: idRutina } },
+    });
+    if (!re) {
+      throw new NotFoundException(
+        `Ejercicio ${idRutinaEjercicio} no encontrado en la rutina ${idRutina}`,
+      );
+    }
+    await this.rutinaEjercicioRepo.remove(re);
+  }
+
+  // ── ASIGNACIONES RUTINA → SOCIO ──────────────────────────────────────────
 
   async asignarRutina(dto: CreateAsignacionRutinaDto): Promise<AsignacionRutina> {
     const rutina = await this.rutinaRepo.findOne({ where: { id_rutina: dto.id_rutina } });

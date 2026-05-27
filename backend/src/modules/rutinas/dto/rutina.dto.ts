@@ -8,7 +8,7 @@ import { PartialType } from '@nestjs/mapped-types';
 import { RutinaEjercicioItemDto } from './rutina-ejercicio.dto';
 
 
-// ─── Crear rutina (RF-011) ────────────────────────────────────────────────────
+//  Crear rutina (RF-011)
 export class CreateRutinaDto {
   @IsNotEmpty({ message: 'El nombre de la rutina es obligatorio' })
   @IsString()
