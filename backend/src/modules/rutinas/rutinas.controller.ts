@@ -117,7 +117,7 @@ export class RutinasController {
   asignarRutina(@Body() dto: CreateAsignacionRutinaDto) { return this.rutinasService.asignarRutina(dto); }
 
   @Get('asignaciones/socio/:idSocio')
-  @Roles('admin', 'entrenador', 'recepcionista')
+  @Roles('admin', 'entrenador', 'recepcionista', 'socio')
   @ApiOperation({ summary: 'Rutinas asignadas a un socio' })
   @ApiParam({ name: 'idSocio', type: Number })
   @ApiResponse({ status: 200, description: 'Rutinas del socio' })

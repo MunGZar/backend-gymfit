@@ -34,7 +34,7 @@ export class SociosController {
   @Roles('admin', 'socio')
   @ApiOperation({ summary: 'Obtener mi perfil de socio (socio)' })
   async findMyProfile(@Request() req: any) {
-    const socio = await this.sociosService.findByUsuario(req.user.sub);
+    const socio = await this.sociosService.findByUsuario(req.user.id_usuario);
     if (!socio) throw new NotFoundException('Perfil de socio no encontrado para este usuario');
     return socio;
   }

@@ -113,7 +113,7 @@ export class SociosService {
   async findByUsuario(idUsuario: number): Promise<Socio | null> {
     return this.socioRepo.findOne({
       where: { usuario: { id_usuario: idUsuario } },
-      relations: ['usuario', 'usuario.rol', 'membresias', 'membresias.plan'],
+      relations: ['usuario', 'usuario.rol', 'membresias', 'membresias.plan', 'asignaciones_rutina', 'asignaciones_rutina.rutina'],
     });
   }
 }

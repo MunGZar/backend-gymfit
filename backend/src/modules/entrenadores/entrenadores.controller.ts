@@ -19,7 +19,7 @@ export class EntrenadoresController {
   create(@Body() dto: CreateEntrenadorDto) { return this.entrenadoresService.create(dto); }
 
   @Get()
-  @Roles('admin', 'recepcionista')
+  @Roles('admin', 'recepcionista', 'entrenador')
   @ApiOperation({ summary: 'Listar todos los entrenadores' })
   @ApiResponse({ status: 200, description: 'Lista de entrenadores' })
   findAll() { return this.entrenadoresService.findAll(); }

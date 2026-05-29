@@ -24,7 +24,7 @@ export class ClasesService {
 
   findAll(): Promise<Clase[]> {
     return this.claseRepo.find({
-      relations: ['entrenador', 'entrenador.usuario'],
+      relations: ['entrenador', 'entrenador.usuario', 'inscripciones'],
       order: { id_clase: 'ASC' },
     });
   }

@@ -14,7 +14,7 @@ export class InscripcionesController {
   constructor(private readonly inscripcionesService: InscripcionesService) {}
 
   @Post()
-  @Roles('admin', 'recepcionista')
+  @Roles('admin', 'recepcionista', 'socio')
   @ApiOperation({ summary: 'Inscribir socio a clase (HU-12)', description: 'Inscribe un socio en una clase grupal verificando que haya cupos disponibles.' })
   @ApiResponse({ status: 201, description: 'Inscripción creada' })
   @ApiResponse({ status: 400, description: 'Sin cupos disponibles o socio ya inscrito' })
@@ -36,7 +36,7 @@ export class InscripcionesController {
   findOne(@Param('id', ParseIntPipe) id: number) { return this.inscripcionesService.findOne(id); }
 
   @Get('socio/:idSocio')
-  @Roles('admin', 'recepcionista', 'entrenador')
+  @Roles('admin', 'recepcionista', 'entrenador', 'socio')
   @ApiOperation({ summary: 'Clases en que está inscrito un socio' })
   @ApiParam({ name: 'idSocio', type: Number })
   @ApiResponse({ status: 200, description: 'Inscripciones del socio' })
@@ -50,7 +50,7 @@ export class InscripcionesController {
   findByClase(@Param('idClase', ParseIntPipe) idClase: number) { return this.inscripcionesService.findByClase(idClase); }
 
   @Delete(':id')
-  @Roles('admin', 'recepcionista')
+  @Roles('admin', 'recepcionista', 'socio')
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiOperation({ summary: 'Cancelar inscripción', description: 'Cancela la inscripción de un socio a una clase y libera el cupo.' })
   @ApiParam({ name: 'id', type: Number })
