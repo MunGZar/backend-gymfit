@@ -1,0 +1,30 @@
+services:
+  - type: web
+    name: gymfit-backend
+    env: node
+    plan: free
+    rootDir: backend
+    autoDeploy: false
+    buildCommand: npm install && npm run build
+    startCommand: npm run start:prod
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 10000
+      - key: DATABASE_URL
+        fromDatabase:
+          name: gymfit-db
+          property: connectionString
+      - key: JWT_SECRET
+        generateValue: true
+      - key: CORS_ORIGIN
+        value: gym-fit-sandy.vercel.app
+      - key: BCRYPT_SALT_ROUNDS
+        value: 10
+
+databases:
+  - name: gymfit-db
+    plan: free
+    databaseName: gymfit
+    user: postgres
