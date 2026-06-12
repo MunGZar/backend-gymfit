@@ -52,11 +52,11 @@ jobs:
         env:
           DB_HOST: 127.0.0.1
           DB_PORT: 5432
-          DB_USERNAME: admin
-          DB_PASSWORD: password123
-          DB_NAME: gymfit_test
+          DB_USERNAME: postgres
+          DB_PASSWORD: Admin01@
+          DB_NAME: gymfit
           NODE_ENV: test
-          JWT_SECRET: change_me_dummy_secret_for_actions_runs_only
+          JWT_SECRET: CHANGE_ME_USE_A_RANDOM_64_CHAR_SECRET
           JWT_EXPIRES_IN: 8h
           JWT_REFRESH_EXPIRATION: 7d
           CORS_ORIGIN: https://gym-fit-sandy.vercel.app
@@ -70,5 +70,11 @@ jobs:
 
       - name: Trigger Render Deploy Hook
         if: success()
+        env:
+          RENDER_DEPLOY_HOOK_URL: ${{ secrets.RENDER_DEPLOY_HOOK_URL }}
         run: |
-          curl -X POST ${{ secrets.RENDER_DEPLOY_HOOK_URL }}
+          if [ -z "$RENDER_DEPLOY_HOOK_URL" ]; then
+            echo "⚠️ RENDER_DEPLOY_HOOK_URL no está configurado en los secretos de GitHub. Saltando despliegue."
+          else
+            curl -X POST "$RENDER_DEPLOY_HOOK_URL"
+          fi
