@@ -27,4 +27,4 @@ databases:
   - name: gymfit-db
     plan: free
     databaseName: gymfit
-    user: postgres
+    user: gymfit_user
